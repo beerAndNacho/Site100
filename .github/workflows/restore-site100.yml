@@ -39,10 +39,11 @@ jobs:
         run: |
           set -euo pipefail
           test "$(find .bootstrap -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')" -eq 4
-          mkdir -p /tmp/site100-segments
+          mkdir -p /tmp/site100-segments /tmp/site100-fix-segments
           split -b 1000 -d -a 2 .bootstrap/part-01 /tmp/site100-segments/segment-
-          echo 'REMOTE PART-01 SEGMENT HASHES'
-          for file in /tmp/site100-segments/segment-*; do
+          split -b 100 -d -a 2 .bootstrap/fix-segment-04 /tmp/site100-fix-segments/segment-
+          echo 'REMOTE FIX SEGMENT HASHES'
+          for file in /tmp/site100-fix-segments/segment-*; do
             printf '%s ' "$(basename "$file")"
             sha256sum "$file" | cut -d' ' -f1
           done
