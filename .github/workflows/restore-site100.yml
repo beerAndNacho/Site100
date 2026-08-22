@@ -39,15 +39,18 @@ jobs:
         run: |
           set -euo pipefail
           test "$(find .bootstrap -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')" -eq 4
-          mkdir -p /tmp/site100-segments /tmp/site100-fix-segments
-          split -b 1000 -d -a 2 .bootstrap/part-01 /tmp/site100-segments/segment-
-          split -b 100 -d -a 2 .bootstrap/fix-segment-04 /tmp/site100-fix-segments/segment-
-          echo 'REMOTE FIX SEGMENT HASHES'
-          for file in /tmp/site100-fix-segments/segment-*; do
-            printf '%s ' "$(basename "$file")"
-            sha256sum "$file" | cut -d' ' -f1
-          done
-          cat .bootstrap/part-* | tr -d '\r\n ' | base64 --decode > /tmp/site100-source.tar.gz
+          python <<'PY'
+          from pathlib import Path
+          path = Path('.bootstrap/part-01')
+          payload = bytearray(path.read_bytes())
+          repair = bytes.fromhex('464430685a446e32464543527a4176326a6464477a6735506f7462633348714761674c44463948414d59574a6c576a67634263587573457341797a42704d367a476b6a67596457544e716c34704c6b74694172726b4b56446458704437323574722f7159')
+          if len(payload) != 18000 or len(repair) != 100:
+              raise SystemExit('Unexpected archive segment length')
+          payload[4400:4500] = repair
+          path.write_bytes(payload)
+          PY
+          echo 'f50b959cb2638de1e2ec734fea2bb49049991c37ead5bd44616894f2d1f86eff  .bootstrap/part-01' | sha256sum -c -
+          cat .bootstrap/part-00 .bootstrap/part-01 .bootstrap/part-02 .bootstrap/part-03 | tr -d '\r\n ' | base64 --decode > /tmp/site100-source.tar.gz
           echo 'ec24645d56070db7c65199f7e18a323652c2d9b250ff669a57af7ab8ceb4d10c  /tmp/site100-source.tar.gz' | sha256sum -c -
           tar -xzf /tmp/site100-source.tar.gz -C .
           test -s package.json
