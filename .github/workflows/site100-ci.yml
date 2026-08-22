@@ -1,0 +1,31 @@
+name: Site100 CI
+
+on:
+  push:
+    branches: [main, site100-100worlds]
+    paths: ['src/**','scripts/**','docs/**','package.json','.github/workflows/site100-ci.yml']
+  pull_request:
+    paths: ['src/**','scripts/**','docs/**','package.json','.github/workflows/site100-ci.yml']
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run check
+      - run: npm run build
+      - name: Verify 100 independent routes
+        run: |
+          test -s dist/index.html
+          test -s dist/assets/app.js
+          test -s dist/assets/styles.css
+          test "$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')" -eq 100
+          test "$(find dist/sites -mindepth 2 -maxdepth 2 -name design.json | wc -l | tr -d ' ')" -eq 100
+          test -s dist/sites/salt-bakery/index.html
+          test -s dist/sites/endpoint-api/index.html
+          test -s dist/sites/dal-hanok-stay/index.html
+          test -s dist/sites/100worlds-gallery/index.html
