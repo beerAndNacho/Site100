@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   group: restore-site100-source-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   restore:
@@ -67,7 +67,6 @@ jobs:
           echo "Validated $route_count independent website routes."
 
       - name: Commit restored source
-        if: github.event_name == 'push'
         run: |
           rm -rf dist .bootstrap
           rm -f .github/workflows/restore-site100.yml
