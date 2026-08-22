@@ -59,7 +59,7 @@ jobs:
           payload[4000:5000] = fixed_segment
           path.write_bytes(payload)
           PY
-          echo 'f50b959cb2638de1e2ec734fea2bb49049991c37ead5bd44616894f2d1f86eff  .bootstrap/part-01' | sha256sum -c -
+          echo 'cc5b4dc5fad7e56a8586c4e0cc5fda6afe858cd4a6533737a2bcee66f1bbe681  .bootstrap/part-01' | sha256sum -c -
           cat .bootstrap/part-00 .bootstrap/part-01 .bootstrap/part-02 .bootstrap/part-03 | tr -d '\r\n ' | base64 --decode > /tmp/site100-source.tar.gz
           echo 'ec24645d56070db7c65199f7e18a323652c2d9b250ff669a57af7ab8ceb4d10c  /tmp/site100-source.tar.gz' | sha256sum -c -
           tar -xzf /tmp/site100-source.tar.gz -C .
