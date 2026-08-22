@@ -1,0 +1,75 @@
+name: Restore Site100 source
+
+on:
+  push:
+    branches: [site100-100worlds]
+    paths:
+      - '.github/workflows/restore-site100.yml'
+      - '.bootstrap/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-site100-source
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reconstruct verified source archive
+        run: |
+          set -euo pipefail
+          test "$(find .bootstrap -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')" -eq 4
+          cat .bootstrap/part-* | tr -d '\r\n ' | base64 --decode > /tmp/site100-source.tar.gz
+          echo 'ec24645d56070db7c65199f7e18a323652c2d9b250ff669a57af7ab8ceb4d10c  /tmp/site100-source.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/site100-source.tar.gz -C .
+          test -s package.json
+          test -s src/catalog.js
+          test -s src/app.js
+          test -s src/styles.css
+          test -s scripts/check.mjs
+          test -s scripts/build.mjs
+
+      - name: Validate 100 designs and build
+        run: |
+          set -euo pipefail
+          npm run check
+          npm run build
+          test -s dist/index.html
+          test -s dist/assets/catalog.js
+          test -s dist/assets/app.js
+          test -s dist/assets/styles.css
+          route_count="$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')"
+          test "$route_count" -eq 100
+          test -s dist/sites/salt-bakery/index.html
+          test -s dist/sites/endpoint-api/index.html
+          test -s dist/sites/dal-hanok-stay/index.html
+          test -s dist/sites/100worlds-gallery/index.html
+          echo "Validated $route_count independent website routes."
+
+      - name: Commit restored source
+        run: |
+          rm -rf dist .bootstrap
+          rm -f .github/workflows/restore-site100.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: add 100 distinct industry websites'
+          git push
