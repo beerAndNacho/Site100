@@ -40,13 +40,23 @@ jobs:
           set -euo pipefail
           test "$(find .bootstrap -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')" -eq 4
           python <<'PY'
+          from hashlib import sha256
           from pathlib import Path
+
           path = Path('.bootstrap/part-01')
           payload = bytearray(path.read_bytes())
+          fixed_segment = bytearray(Path('.bootstrap/fix-segment-04').read_bytes())
           repair = bytes.fromhex('464430685a446e32464543527a4176326a6464477a6735506f7462633348714761674c44463948414d59574a6c576a67634263587573457341797a42704d367a476b6a67596457544e716c34704c6b74694172726b4b56446458704437323574722f7159')
-          if len(payload) != 18000 or len(repair) != 100:
+
+          if len(payload) != 18000 or len(fixed_segment) != 1000 or len(repair) != 100:
               raise SystemExit('Unexpected archive segment length')
-          payload[4400:4500] = repair
+
+          fixed_segment[400:500] = repair
+          expected_segment = '3e14bf07974f6d15dd231135005b2f518e45a4a6f562836bd6820d7069ba8306'
+          if sha256(fixed_segment).hexdigest() != expected_segment:
+              raise SystemExit('Corrected 1KB segment checksum mismatch')
+
+          payload[4000:5000] = fixed_segment
           path.write_bytes(payload)
           PY
           echo 'f50b959cb2638de1e2ec734fea2bb49049991c37ead5bd44616894f2d1f86eff  .bootstrap/part-01' | sha256sum -c -
