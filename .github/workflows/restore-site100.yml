@@ -6,22 +6,28 @@ on:
     paths:
       - '.github/workflows/restore-site100.yml'
       - '.bootstrap/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-site100.yml'
+      - '.bootstrap/**'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: restore-site100-source
+  group: restore-site100-source-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   restore:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -61,6 +67,7 @@ jobs:
           echo "Validated $route_count independent website routes."
 
       - name: Commit restored source
+        if: github.event_name == 'push'
         run: |
           rm -rf dist .bootstrap
           rm -f .github/workflows/restore-site100.yml
@@ -72,4 +79,4 @@ jobs:
             exit 0
           fi
           git commit -m 'feat: add 100 distinct industry websites'
-          git push
+          git push origin HEAD:site100-100worlds
