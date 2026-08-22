@@ -1,0 +1,11 @@
+{
+  "name": "site100-worlds",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "100 industry-specific homepages with unique design fingerprints.",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/build.mjs"
+  }
+}
