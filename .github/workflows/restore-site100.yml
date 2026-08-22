@@ -39,6 +39,13 @@ jobs:
         run: |
           set -euo pipefail
           test "$(find .bootstrap -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')" -eq 4
+          mkdir -p /tmp/site100-segments
+          split -b 1000 -d -a 2 .bootstrap/part-01 /tmp/site100-segments/segment-
+          echo 'REMOTE PART-01 SEGMENT HASHES'
+          for file in /tmp/site100-segments/segment-*; do
+            printf '%s ' "$(basename "$file")"
+            sha256sum "$file" | cut -d' ' -f1
+          done
           cat .bootstrap/part-* | tr -d '\r\n ' | base64 --decode > /tmp/site100-source.tar.gz
           echo 'ec24645d56070db7c65199f7e18a323652c2d9b250ff669a57af7ab8ceb4d10c  /tmp/site100-source.tar.gz' | sha256sum -c -
           tar -xzf /tmp/site100-source.tar.gz -C .
