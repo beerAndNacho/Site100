@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
+import { basename, extname, join, normalize, resolve } from 'node:path';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { extname, join, normalize, resolve } from 'node:path';
 
 const dist = resolve(process.cwd(), 'dist');
 const mime = {
@@ -61,8 +61,18 @@ try {
     text: script.src ? '' : script.textContent.slice(0, 80)
   })));
   if (exceptions.length) {
+    const sources = [...new Set(exceptions.map((exception) => basename(new URL(exception.url).pathname)))].map((name) => {
+      const path = resolve(dist, 'assets', name);
+      const lines = existsSync(path) ? readFileSync(path, 'utf8').split('\n') : [];
+      return {
+        name,
+        declarations: lines.flatMap((line, index) => /const\s+\$/.test(line) ? [{ line: index + 1, text: line }] : []),
+        firstLines: lines.slice(0, 14).map((line, index) => `${index + 1}: ${line}`)
+      };
+    });
     console.error('Generated script tags:', JSON.stringify(scripts, null, 2));
     console.error('Runtime exceptions:', JSON.stringify(exceptions, null, 2));
+    console.error('Generated source excerpts:', JSON.stringify(sources, null, 2));
     throw new Error(`Module scope smoke failed with ${exceptions.length} exception(s).`);
   }
   console.log(`Module scope smoke passed with ${scripts.length} script tags.`);
