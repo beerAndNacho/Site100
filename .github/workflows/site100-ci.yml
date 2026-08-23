@@ -2,10 +2,20 @@ name: Site100 CI
 
 on:
   push:
-    branches: [main, site100-100worlds]
-    paths: ['src/**','scripts/**','docs/**','package.json','.github/workflows/site100-ci.yml']
+    branches: [main, site100-v2-advanced]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'package.json'
+      - '.github/workflows/site100-ci.yml'
   pull_request:
-    paths: ['src/**','scripts/**','docs/**','package.json','.github/workflows/site100-ci.yml']
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'package.json'
+      - '.github/workflows/site100-ci.yml'
   workflow_dispatch:
 
 jobs:
@@ -16,15 +26,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run check
-      - run: npm run build
-      - name: Verify 100 independent routes
+      - name: Validate source and diversity
+        run: npm run check
+      - name: Build 100 sites and v2 assets
+        run: npm run build
+      - name: Audit generated routes, SEO and previews
+        run: npm run audit
+      - name: Verify representative output
         run: |
           test -s dist/index.html
           test -s dist/assets/app.js
+          test -s dist/assets/enhance.js
+          test -s dist/assets/enhance-fix.js
           test -s dist/assets/styles.css
+          test -s dist/assets/v2.css
+          test -s dist/site.webmanifest
+          test -s dist/404.html
+          test -s dist/preview-gallery.svg
           test "$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')" -eq 100
           test "$(find dist/sites -mindepth 2 -maxdepth 2 -name design.json | wc -l | tr -d ' ')" -eq 100
+          test "$(find dist/previews -maxdepth 1 -name '*.svg' | wc -l | tr -d ' ')" -eq 100
+          grep -q '/Site100/assets/enhance-fix.js' dist/index.html
+          grep -q '/Site100/assets/enhance-fix.js' dist/sites/salt-bakery/index.html
           test -s dist/sites/salt-bakery/index.html
           test -s dist/sites/endpoint-api/index.html
           test -s dist/sites/dal-hanok-stay/index.html
