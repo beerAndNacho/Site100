@@ -6,13 +6,23 @@ const root = resolve(process.cwd());
 const dist = resolve(root, 'dist');
 const responsiveRuntime = resolve(root, 'src', 'responsive-v4.js');
 const fixesSource = resolve(root, 'src', 'v4-fixes.css');
+const responsiveOutput = resolve(dist, 'assets', 'responsive.js');
 
 for (const path of [dist, responsiveRuntime, fixesSource]) {
   if (!existsSync(path)) throw new Error(`Missing responsive patch input: ${path}`);
 }
 
-cpSync(responsiveRuntime, resolve(dist, 'assets', 'responsive.js'));
+cpSync(responsiveRuntime, responsiveOutput);
 cpSync(fixesSource, resolve(dist, 'assets', 'v4-fixes.css'));
+
+let runtimeSource = readFileSync(responsiveOutput, 'utf8');
+const rawOverflowAssignment = '  ROOT.dataset.v4DocumentOverflow = String(Math.max(ROOT.scrollWidth, BODY.scrollWidth) > viewportWidth + 2);';
+const clippedOverflowAssignment = `  const rawDocumentOverflow = Math.max(ROOT.scrollWidth, BODY.scrollWidth) - viewportWidth;\n  const rootClipsHorizontalOverflow = [ROOT, BODY].some((element) => {\n    const overflow = getComputedStyle(element).overflowX;\n    return overflow === 'hidden' || overflow === 'clip';\n  });\n  ROOT.dataset.v4ClippedDecorativeOverflow = String(rawDocumentOverflow > 2 && rootClipsHorizontalOverflow);\n  ROOT.dataset.v4DocumentOverflow = String(rawDocumentOverflow > 2 && !rootClipsHorizontalOverflow);`;
+if (!runtimeSource.includes(rawOverflowAssignment)) {
+  throw new Error('Unable to locate the responsive document overflow assignment.');
+}
+runtimeSource = runtimeSource.replace(rawOverflowAssignment, () => clippedOverflowAssignment);
+writeFileSync(responsiveOutput, runtimeSource);
 
 for (const site of SITES) {
   const designPath = resolve(dist, 'sites', site.slug, 'design.json');
@@ -26,7 +36,8 @@ for (const site of SITES) {
     'hero-navigation-layering',
     'normalized-touch-targets',
     'dialog-inline-containment',
-    'forced-device-preview-widths'
+    'forced-device-preview-widths',
+    'clipped-decoration-overflow-policy'
   ])];
   writeFileSync(designPath, `${JSON.stringify(design, null, 2)}\n`);
 }
@@ -65,7 +76,8 @@ manifest.responsiveSystem.fixedFailureClasses = [
   'touch-target-width',
   'dialog-inline-overflow',
   'radial-navigation-bounds',
-  'simulated-device-preview-width'
+  'simulated-device-preview-width',
+  'clipped-decoration-overflow-flag'
 ];
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
