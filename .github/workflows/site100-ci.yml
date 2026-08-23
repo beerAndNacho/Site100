@@ -2,7 +2,7 @@ name: Site100 CI
 
 on:
   push:
-    branches: [main, site100-v2-advanced, site100-v2-copy-polish, site100-v3-art-direction, site100-v4-responsive-app]
+    branches: [main, site100-v2-advanced, site100-v2-copy-polish, site100-v3-art-direction, site100-v4-responsive-app, site100-v5-deep-architecture]
     paths:
       - 'src/**'
       - 'scripts/**'
@@ -21,19 +21,19 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install responsive browser audit dependencies
+      - name: Install browser audit dependencies
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
-      - name: Validate, build and run the full responsive matrix
-        run: npm run test:responsive
-      - name: Verify representative v4 output
+      - name: Validate, build and run responsive plus deep browser matrices
+        run: npm run test:deep
+      - name: Verify Site100 v5 output
         run: |
           set -euo pipefail
           test -s dist/index.html
@@ -46,58 +46,69 @@ jobs:
           test -s dist/assets/art-direction.js
           test -s dist/assets/responsive.js
           test -s dist/assets/responsive-fixes.js
+          test -s dist/assets/depth-content.js
+          test -s dist/assets/depth.js
           test -s dist/assets/styles.css
           test -s dist/assets/v2.css
           test -s dist/assets/v3.css
           test -s dist/assets/v4-responsive.css
           test -s dist/assets/v4-responsive-fixes.css
           test -s dist/assets/v4-fixes.css
+          test -s dist/assets/v5-depth.css
           test -s dist/site.webmanifest
           test -s dist/404.html
           test -s dist/preview-gallery.svg
           test -s dist/responsive-matrix.json
           test -s dist/responsive-static-report.json
+          test -s dist/depth-manifest.json
+          test -s dist/depth-audit-report.json
           test -s dist/reports/responsive-browser-report.json
-          test "$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')" -eq 100
-          test "$(find dist/sites -mindepth 2 -maxdepth 2 -name design.json | wc -l | tr -d ' ')" -eq 100
+          test -s dist/reports/depth-browser-report.json
+
+          root_count="$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')"
+          page_count="$(find dist/sites -name index.html | wc -l | tr -d ' ')"
+          design_count="$(find dist/sites -mindepth 2 -maxdepth 2 -name design.json | wc -l | tr -d ' ')"
+          site_map_count="$(find dist/sites -mindepth 2 -maxdepth 2 -name site-map.json | wc -l | tr -d ' ')"
+          test "$root_count" -eq 100
+          test "$page_count" -eq 1400
+          test "$design_count" -eq 100
+          test "$site_map_count" -eq 100
           test "$(find dist/previews -maxdepth 1 -name '*.svg' | wc -l | tr -d ' ')" -eq 100
           test "$(find dist/artworks -maxdepth 1 -name '*.svg' | wc -l | tr -d ' ')" -eq 100
-          grep -q '/Site100/assets/responsive.js' dist/index.html
-          grep -q '/Site100/assets/responsive-fixes.js' dist/index.html
-          grep -q '/Site100/assets/v4-responsive.css' dist/index.html
-          grep -q '/Site100/assets/v4-responsive-fixes.css' dist/index.html
-          grep -q '/Site100/assets/v4-fixes.css' dist/index.html
-          grep -q '__SITE100_GALLERY_RETRY__' dist/assets/enhance.js
-          grep -q 'setupPreviewModes' dist/assets/responsive.js
-          grep -q '/Site100/assets/responsive.js' dist/sites/salt-bakery/index.html
-          grep -q '/Site100/assets/responsive-fixes.js' dist/sites/salt-bakery/index.html
-          grep -q '/Site100/assets/v4-fixes.css' dist/sites/salt-bakery/index.html
+
+          grep -q '/Site100/assets/depth.js' dist/index.html
+          grep -q '/Site100/assets/v5-depth.css' dist/index.html
+          grep -q '"depthVersion": "5.0.0"' dist/manifest.json
+          grep -q '"sitePageCount": 1400' dist/manifest.json
+          grep -q '"pagesPerSite": 14' dist/depth-manifest.json
+          grep -q '"maximumDepth": 3' dist/depth-manifest.json
           grep -q '"responsiveVersion": "4.0.0"' dist/sites/salt-bakery/design.json
           grep -q '"responsivePatchVersion": "4.0.1"' dist/sites/salt-bakery/design.json
-          grep -q '"strategy": "viewport-and-container-queries"' dist/sites/salt-bakery/design.json
           grep -q '"visualVersion": "3.0.0"' dist/sites/salt-bakery/design.json
-          grep -q '"artDirection": "atelier"' dist/sites/salt-bakery/design.json
-          grep -q '"artDirection": "precision"' dist/sites/harbor-law/design.json
-          grep -q '"artDirection": "interface"' dist/sites/endpoint-api/design.json
-          grep -q '"artDirection": "notebook"' dist/sites/compile-bootcamp/design.json
-          grep -q '"artDirection": "organic"' dist/sites/still-yoga/design.json
-          grep -q '"artDirection": "studio"' dist/sites/framework-film/design.json
-          grep -q '"artDirection": "atlas"' dist/sites/dal-hanok-stay/design.json
-          grep -q '"artDirection": "catalog"' dist/sites/table7-restaurant/design.json
-          grep -q '"artDirection": "civic"' dist/sites/open-hand-nonprofit/design.json
-          grep -q '"artDirection": "experimental"' dist/sites/desktop-cv/design.json
-          test -s dist/artworks/salt-bakery.svg
-          test -s dist/artworks/endpoint-api.svg
-          test -s dist/artworks/dal-hanok-stay.svg
-          test -s dist/artworks/100worlds-gallery.svg
-      - name: Upload responsive audit report
+          grep -q '"depthVersion": "5.0.0"' dist/sites/salt-bakery/design.json
+          grep -q '"pageCount": 14' dist/sites/salt-bakery/design.json
+
+          test -s dist/sites/salt-bakery/about/index.html
+          test -s dist/sites/salt-bakery/services/index.html
+          test -s dist/sites/salt-bakery/services/service-01/index.html
+          test -s dist/sites/salt-bakery/work/case-01/index.html
+          test -s dist/sites/salt-bakery/journal/insight-01/index.html
+          test -s dist/sites/salt-bakery/contact/index.html
+          grep -q 'data-v5-add-service' dist/sites/salt-bakery/services/service-01/index.html
+          grep -q 'data-v5-wizard' dist/sites/salt-bakery/contact/index.html
+          grep -q 'data-v5-article' dist/sites/salt-bakery/journal/insight-01/index.html
+
+          node -e "const responsive=require('./dist/reports/responsive-browser-report.json'); if(responsive.failures.length) process.exit(1); if(responsive.checks!==262) throw new Error('Expected 262 responsive checks, got '+responsive.checks); const depth=require('./dist/reports/depth-browser-report.json'); if(depth.failures.length) process.exit(1); if(depth.checks!==520) throw new Error('Expected 520 deep checks, got '+depth.checks); console.log('Verified '+responsive.checks+' responsive and '+depth.checks+' deep browser checks.');"
+      - name: Upload Site100 audit reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: site100-responsive-audit
+          name: site100-v5-audits
           path: |
             dist/responsive-matrix.json
             dist/responsive-static-report.json
+            dist/depth-manifest.json
+            dist/depth-audit-report.json
             dist/reports/
           if-no-files-found: warn
           retention-days: 14

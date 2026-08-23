@@ -1,0 +1,83 @@
+/* Site100 v5.0.1 — deep-page structural normalization */
+
+/*
+ * Horizontal is a valid art direction for a one-page showcase, but a multi-page
+ * information architecture must read vertically. Keep the palette, typography,
+ * navigation and surfaces while neutralizing the home-only horizontal canvas.
+ */
+.world[data-v5-page]:not([data-v5-page="home"]).layout-horizontal .v5-page-main {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  scroll-snap-type: none !important;
+  columns: auto !important;
+  column-gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+.world[data-v5-page]:not([data-v5-page="home"]).layout-horizontal .v5-page-main > :is(.v5-page-hero, .v5-section) {
+  display: grid;
+  flex: none !important;
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border-right: 0 !important;
+  scroll-snap-align: none !important;
+  transform: none !important;
+  clip-path: none !important;
+}
+
+.world[data-v5-page]:not([data-v5-page="home"]).layout-horizontal .v5-page-main > .v5-section {
+  display: block;
+}
+
+.world[data-v5-page]:not([data-v5-page="home"]).layout-horizontal .v5-page-main :is(.v5-section-inner, .v5-wizard, .v5-card-grid, .v5-comparison, .v5-process, .v5-related-links) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Side navigation variants reserve their space through the page shell. Deep
+ * sections must size against the remaining inline area rather than 100vw. */
+.world[data-v5-page]:not([data-v5-page="home"]).navspace-rail .v5-page-main,
+.world[data-v5-page]:not([data-v5-page="home"]).navspace-dock .v5-page-main {
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Decorative transforms from poster/collage/archive layouts can be retained on
+ * home pages, but deep reading and form pages need predictable document bounds. */
+.world[data-v5-page]:not([data-v5-page="home"]) .v5-page-main > :is(.v5-page-hero, .v5-section) {
+  box-sizing: border-box;
+}
+
+.world[data-v5-page]:not([data-v5-page="home"]):is(.layout-poster, .layout-collage, .layout-archive, .layout-isometric) .v5-page-main > :is(.v5-page-hero, .v5-section) {
+  max-width: 100% !important;
+  margin-inline: 0 !important;
+  transform: none !important;
+  clip-path: none !important;
+}
+
+@media (max-width: 980px) {
+  .world[data-v5-page]:not([data-v5-page="home"]) .v5-page-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+@container world (max-width: 980px) {
+  .world[data-v5-page]:not([data-v5-page="home"]) .v5-page-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+}
