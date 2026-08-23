@@ -2,10 +2,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { SITES } from '../src/catalog.js';
+import { polishedSite } from '../src/copy.js';
 
 const dist = resolve(process.cwd(), 'dist');
 if (!existsSync(dist)) throw new Error('dist/ not found. Run npm run build first.');
-const requiredAssets = ['catalog.js','app.js','styles.css','enhance.js','v2.css'];
+const requiredAssets = ['catalog.js','copy.js','copy-bootstrap.js','app.js','styles.css','enhance.js','enhance-fix.js','v2.css'];
 for (const file of requiredAssets) if (!existsSync(resolve(dist, 'assets', file))) throw new Error(`Missing asset ${file}`);
 
 const routes = readdirSync(resolve(dist, 'sites')).filter((slug) => statSync(resolve(dist, 'sites', slug)).isDirectory());
@@ -14,7 +15,8 @@ const previewHashes = new Set();
 const titles = new Set();
 const canonicals = new Set();
 
-for (const site of SITES) {
+for (const original of SITES) {
+  const site = polishedSite(original);
   const pagePath = resolve(dist, 'sites', site.slug, 'index.html');
   const designPath = resolve(dist, 'sites', site.slug, 'design.json');
   const previewPath = resolve(dist, 'previews', `${site.slug}.svg`);
@@ -30,18 +32,24 @@ for (const site of SITES) {
     ['structured data', 'application/ld+json'],
     ['base stylesheet', '/Site100/assets/styles.css'],
     ['v2 stylesheet', '/Site100/assets/v2.css'],
+    ['copy bootstrap', '/Site100/assets/copy-bootstrap.js'],
     ['app module', '/Site100/assets/app.js'],
     ['enhancement module', '/Site100/assets/enhance.js'],
+    ['compatibility module', '/Site100/assets/enhance-fix.js'],
     ['manifest', '/Site100/site.webmanifest']
   ];
   for (const [label, token] of checks) if (!html.includes(token)) throw new Error(`Missing ${label} in ${site.slug}`);
+  if (!html.includes(site.tagline)) throw new Error(`Polished tagline missing in ${site.slug}`);
+  if (html.includes(original.tagline) && original.tagline !== site.tagline) throw new Error(`Legacy tagline remains in ${site.slug}`);
   const title = (html.match(/<title>(.*?)<\/title>/) || [])[1];
   const canonical = (html.match(/<link rel="canonical" href="([^"]+)"/) || [])[1];
   if (!title || titles.has(title)) throw new Error(`Duplicate or missing title ${site.slug}`);
   if (!canonical || canonicals.has(canonical)) throw new Error(`Duplicate or missing canonical ${site.slug}`);
   titles.add(title); canonicals.add(canonical);
   const design = JSON.parse(readFileSync(designPath, 'utf8'));
-  if (design.version !== '2.0.0') throw new Error(`Unexpected design version ${site.slug}`);
+  if (design.version !== '2.0.0' || design.copyVersion !== '2.1.0') throw new Error(`Unexpected design/copy version ${site.slug}`);
+  if (design.tagline !== site.tagline) throw new Error(`design.json tagline mismatch ${site.slug}`);
+  if (JSON.stringify(design.services) !== JSON.stringify(site.services)) throw new Error(`design.json services mismatch ${site.slug}`);
   if (design.contentSignature !== `${site.kind}|${site.interaction}|${site.materials.join('|')}`) throw new Error(`Content signature mismatch ${site.slug}`);
   const preview = readFileSync(previewPath);
   const hash = createHash('sha256').update(preview).digest('hex');
@@ -53,8 +61,8 @@ for (const file of ['index.html','sitemap.xml','robots.txt','manifest.json','sit
   if (!existsSync(resolve(dist, file))) throw new Error(`Missing root output ${file}`);
 }
 const gallery = readFileSync(resolve(dist, 'index.html'), 'utf8');
-for (const token of ['CollectionPage','/Site100/assets/enhance.js','/Site100/assets/v2.css','preview-gallery.svg']) if (!gallery.includes(token)) throw new Error(`Gallery missing ${token}`);
+for (const token of ['CollectionPage','/Site100/assets/copy-bootstrap.js','/Site100/assets/enhance.js','/Site100/assets/enhance-fix.js','/Site100/assets/v2.css','preview-gallery.svg']) if (!gallery.includes(token)) throw new Error(`Gallery missing ${token}`);
 const manifest = JSON.parse(readFileSync(resolve(dist, 'manifest.json'), 'utf8'));
 if (manifest.count !== 100 || manifest.version !== '2.0.0') throw new Error('Invalid manifest summary');
 if (!manifest.features.includes('comparison') || !manifest.features.includes('template-customizer')) throw new Error('Manifest missing v2 features');
-console.log(`Audited ${routes.length} routes, ${previewHashes.size} unique previews, SEO metadata, structured data and v2 assets.`);
+console.log(`Audited ${routes.length} routes, 100 polished domain descriptions, ${previewHashes.size} unique previews, SEO metadata and v2 assets.`);
