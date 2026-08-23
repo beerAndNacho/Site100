@@ -14,13 +14,16 @@ function applyDevicePreview(device) {
 }
 
 function bindDeviceControls() {
+  const controls = $$('[data-device]');
+  if (!controls.length) return;
+
   document.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-device]');
     if (!button) return;
     applyDevicePreview(button.dataset.device);
   }, { capture: true });
 
-  const active = $('[data-device][aria-pressed="true"]')?.dataset.device || document.body.dataset.previewDevice || 'desktop';
+  const active = controls.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.device || document.body.dataset.previewDevice || 'desktop';
   applyDevicePreview(active);
 }
 
