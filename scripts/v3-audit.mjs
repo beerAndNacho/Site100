@@ -6,6 +6,9 @@ import { SITES } from '../src/catalog.js';
 const dist = resolve(process.cwd(), 'dist');
 const DIRECTIONS = ['atelier','precision','interface','notebook','organic','studio','atlas','catalog','civic','experimental'];
 const directionFor = (site) => DIRECTIONS[Math.min(9, Math.floor((site.id - 1) / 10))];
+const xml = (value) => String(value).replace(/[<>&"']/g, (character) => ({
+  '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;'
+})[character]);
 
 for (const path of [
   resolve(dist, 'assets', 'art-direction.js'),
@@ -28,7 +31,7 @@ for (const site of SITES) {
   const designPath = resolve(dist, 'sites', site.slug, 'design.json');
   if (!existsSync(artPath)) throw new Error(`Missing artwork for ${site.slug}`);
   const svg = readFileSync(artPath, 'utf8');
-  for (const token of ['<svg', site.name, site.kind, site.materials[0], 'aria-labelledby']) {
+  for (const token of ['<svg', xml(site.name), xml(site.kind), xml(site.materials[0]), 'aria-labelledby']) {
     if (!svg.includes(token)) throw new Error(`Artwork ${site.slug} missing ${token}`);
   }
   const hash = createHash('sha256').update(svg).digest('hex');
