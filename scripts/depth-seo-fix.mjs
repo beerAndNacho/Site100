@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { SITES } from '../src/catalog.js';
 import { deepRoutes } from '../src/depth-content.js';
@@ -10,6 +10,10 @@ const siteBase = `${origin}/Site100`;
 const duplicatePrefix = `${siteBase}/Site100/`;
 
 if (!existsSync(resolve(dist, 'index.html'))) throw new Error('dist/ not found. Run the deep build first.');
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[character]);
 
 const decodeHtml = (value) => String(value)
   .replaceAll('&amp;', '&')
@@ -63,11 +67,13 @@ function patchPage(path, site, route) {
     .replace(/<link rel="canonical" href="[^"]+">/, `<link rel="canonical" href="${canonical}">`);
 
   if (route.type === 'about') {
-    const subject = withParticle(site.name, '이', '가');
-    const topic = withParticle(site.name, '은', '는');
+    const escapedName = escapeHtml(site.name);
+    const escapedKind = escapeHtml(site.kind);
+    const subject = escapeHtml(withParticle(site.name, '이', '가'));
+    const topic = escapeHtml(withParticle(site.name, '은', '는'));
     html = html
-      .replace(`${site.name}이 만드는`, `${subject} 만드는`)
-      .replace(`${site.name}은 ${site.kind}`, `${topic} ${site.kind}`);
+      .replace(`${escapedName}이 만드는`, `${subject} 만드는`)
+      .replace(`${escapedName}은 ${escapedKind}`, `${topic} ${escapedKind}`);
   }
 
   html = patchStructuredData(html, canonical);
@@ -92,7 +98,7 @@ for (const site of SITES) {
 }
 
 const sitemapPath = resolve(dist, 'sitemap.xml');
-let sitemap = readFileSync(sitemapPath, 'utf8').replaceAll(duplicatePrefix, `${siteBase}/`);
+const sitemap = readFileSync(sitemapPath, 'utf8').replaceAll(duplicatePrefix, `${siteBase}/`);
 writeFileSync(sitemapPath, sitemap);
 
 const manifestPath = resolve(dist, 'manifest.json');
