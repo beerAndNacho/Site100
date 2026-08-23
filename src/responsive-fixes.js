@@ -137,11 +137,48 @@
     setMenuState(toggle, Boolean(world?.classList.contains('v2-nav-open')));
   }
 
+  function horizontalOverflowIsClipped() {
+    const values = [document.documentElement, document.body]
+      .map((element) => getComputedStyle(element).overflowX);
+    return values.some((value) => value === 'hidden' || value === 'clip');
+  }
+
+  function normalizeDocumentOverflowFlag() {
+    const rawOverflow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth;
+    const clipped = rawOverflow > 2 && horizontalOverflowIsClipped();
+    document.documentElement.dataset.v4ClippedDecorativeOverflow = String(clipped);
+    if (clipped && document.documentElement.dataset.v4DocumentOverflow !== 'false') {
+      document.documentElement.dataset.v4DocumentOverflow = 'false';
+    }
+  }
+
+  function bindOverflowPolicy() {
+    if (window.__SITE100_OVERFLOW_POLICY__) return;
+    window.__SITE100_OVERFLOW_POLICY__ = true;
+    let frame = 0;
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => requestAnimationFrame(normalizeDocumentOverflowFlag));
+    };
+
+    new MutationObserver((records) => {
+      if (records.some((record) => record.attributeName === 'data-v4-document-overflow')) schedule();
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-v4-document-overflow']
+    });
+
+    window.addEventListener('resize', schedule, { passive: true });
+    document.documentElement.addEventListener('site100:preview-device', schedule);
+    schedule();
+  }
+
   function boot() {
     bindDeviceControls();
     bindHiddenPanels();
     bindMobileNavigationController();
     normalizeMobileToggle();
+    bindOverflowPolicy();
   }
 
   const run = () => requestAnimationFrame(() => requestAnimationFrame(boot));
