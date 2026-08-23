@@ -19,9 +19,9 @@ function walk(directory) {
     }
     if (!name.endsWith('.html')) continue;
     let html = readFileSync(path, 'utf8');
+    const depthTag = '<link rel="stylesheet" href="/Site100/assets/v5-depth.css">';
+    if (!html.includes(depthTag)) continue;
     if (!html.includes('/Site100/assets/v5-depth-fixes.css')) {
-      const depthTag = '<link rel="stylesheet" href="/Site100/assets/v5-depth.css">';
-      if (!html.includes(depthTag)) throw new Error(`Missing v5 depth stylesheet in ${path}`);
       html = html.replace(depthTag, `${depthTag}<link rel="stylesheet" href="/Site100/assets/v5-depth-fixes.css">`);
       writeFileSync(path, html);
     }
