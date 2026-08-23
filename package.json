@@ -1,11 +1,11 @@
 {
   "name": "site100-worlds",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "100 industry-specific responsive websites with distinct design fingerprints, comparison and customization tools.",
+  "description": "100 industry-specific responsive websites with distinct design fingerprints, comparison, customization and polished Korean copy.",
   "scripts": {
-    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check scripts/postbuild.mjs",
+    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check src/copy.js && node --check src/copy-bootstrap.js && node --check scripts/postbuild.mjs",
     "build": "node scripts/build.mjs && node scripts/postbuild.mjs",
     "audit": "node scripts/audit.mjs",
     "test": "npm run check && npm run build && npm run audit"
