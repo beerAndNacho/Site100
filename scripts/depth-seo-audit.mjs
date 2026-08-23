@@ -12,6 +12,10 @@ const failures = [];
 let checked = 0;
 let breadcrumbItems = 0;
 
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[character]);
+
 for (const site of SITES) {
   for (const route of deepRoutes(site)) {
     if (route.type === 'home') continue;
@@ -61,12 +65,14 @@ for (const site of SITES) {
     }
 
     if (route.type === 'about') {
-      const subject = `${withParticle(site.name, '이', '가')} 만드는`;
-      const topic = `${withParticle(site.name, '은', '는')} ${site.kind}`;
+      const escapedName = escapeHtml(site.name);
+      const escapedKind = escapeHtml(site.kind);
+      const subject = `${escapeHtml(withParticle(site.name, '이', '가'))} 만드는`;
+      const topic = `${escapeHtml(withParticle(site.name, '은', '는'))} ${escapedKind}`;
       if (!html.includes(subject)) failures.push(`${route.path}: subject particle copy missing (${subject})`);
       if (!html.includes(topic)) failures.push(`${route.path}: topic particle copy missing (${topic})`);
-      if (html.includes(`${site.name}이 만드는`) && subject !== `${site.name}이 만드는`) failures.push(`${route.path}: legacy subject particle remains`);
-      if (html.includes(`${site.name}은 ${site.kind}`) && topic !== `${site.name}은 ${site.kind}`) failures.push(`${route.path}: legacy topic particle remains`);
+      if (html.includes(`${escapedName}이 만드는`) && subject !== `${escapedName}이 만드는`) failures.push(`${route.path}: legacy subject particle remains`);
+      if (html.includes(`${escapedName}은 ${escapedKind}`) && topic !== `${escapedName}은 ${escapedKind}`) failures.push(`${route.path}: legacy topic particle remains`);
     }
   }
 }
@@ -78,7 +84,7 @@ if (urls.length !== 1401) failures.push(`sitemap: expected 1401 URLs, got ${urls
 if (new Set(urls).size !== urls.length) failures.push('sitemap: duplicate URLs found');
 for (const site of SITES) {
   for (const route of deepRoutes(site)) {
-    const expected = route.type === 'home' ? `${origin}${route.path}` : `${origin}${route.path}`;
+    const expected = `${origin}${route.path}`;
     if (!urls.includes(expected)) failures.push(`sitemap: missing ${expected}`);
   }
 }
