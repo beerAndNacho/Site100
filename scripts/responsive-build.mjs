@@ -4,7 +4,7 @@ import { SITES } from '../src/catalog.js';
 
 const root = resolve(process.cwd());
 const dist = resolve(root, 'dist');
-const assets = ['responsive.js', 'v4-responsive.css'];
+const assets = ['responsive.js', 'responsive-fixes.js', 'v4-responsive.css', 'v4-responsive-fixes.css'];
 const viewportMatrix = [
   { name: 'compact-360', width: 360, height: 800 },
   { name: 'mobile-390', width: 390, height: 844 },
@@ -20,6 +20,22 @@ for (const file of assets) {
   const source = resolve(root, 'src', file);
   if (!existsSync(source)) throw new Error(`Missing responsive source asset: ${file}`);
   cpSync(source, resolve(dist, 'assets', file));
+}
+
+// The gallery enhancement is a progressive module. On a cold module graph it
+// can execute one frame before the base gallery markup has been committed.
+const enhancementPath = resolve(dist, 'assets', 'enhance.js');
+if (existsSync(enhancementPath)) {
+  let enhancement = readFileSync(enhancementPath, 'utf8');
+  enhancement = enhancement.replace(
+    "const $ = (selector, root = document) => root.querySelector(selector);\nconst $$ = (selector, root = document) => [...root.querySelectorAll(selector)];",
+    "const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];"
+  );
+  enhancement = enhancement.replace(
+    "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  const originalCards = $$('.gcard', grid);",
+    "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  if (!index || !tools || !grid) {\n    window.__SITE100_GALLERY_RETRY__ = (window.__SITE100_GALLERY_RETRY__ || 0) + 1;\n    if (window.__SITE100_GALLERY_RETRY__ < 20) setTimeout(setupGallery, 16);\n    return;\n  }\n  window.__SITE100_GALLERY_RETRY__ = 0;\n  const originalCards = $$('.gcard', grid);"
+  );
+  writeFileSync(enhancementPath, enhancement);
 }
 
 for (const site of SITES) {
@@ -58,10 +74,14 @@ function walk(directory) {
     if (!name.endsWith('.html')) continue;
     let html = readFileSync(path, 'utf8');
     if (!html.includes('/Site100/assets/v4-responsive.css')) {
-      html = html.replace('</head>', '<link rel="stylesheet" href="/Site100/assets/v4-responsive.css"></head>');
+      html = html.replace('</head>', '<link rel="stylesheet" href="/Site100/assets/v4-responsive.css"><link rel="stylesheet" href="/Site100/assets/v4-responsive-fixes.css"></head>');
+    } else if (!html.includes('/Site100/assets/v4-responsive-fixes.css')) {
+      html = html.replace('</head>', '<link rel="stylesheet" href="/Site100/assets/v4-responsive-fixes.css"></head>');
     }
     if (!html.includes('/Site100/assets/responsive.js')) {
-      html = html.replace('</body>', '<script type="module" src="/Site100/assets/responsive.js"></script></body>');
+      html = html.replace('</body>', '<script type="module" src="/Site100/assets/responsive.js"></script><script type="module" src="/Site100/assets/responsive-fixes.js"></script></body>');
+    } else if (!html.includes('/Site100/assets/responsive-fixes.js')) {
+      html = html.replace('</body>', '<script type="module" src="/Site100/assets/responsive-fixes.js"></script></body>');
     }
     writeFileSync(path, html);
   }
@@ -88,7 +108,9 @@ manifest.responsiveSystem = {
     'horizontal-content-regions',
     'runtime-overflow-scan',
     'landscape-phone-layout',
-    'print-layout'
+    'print-layout',
+    'gallery-render-retry',
+    'radial-nav-normalization'
   ]
 };
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
