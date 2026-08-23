@@ -1,0 +1,200 @@
+/* Site100 v4 responsive fixes discovered by the Chromium matrix */
+
+/* HTML hidden must win over author display rules. */
+:where(.world, .gallery) [hidden],
+.v2-compare-dock[hidden],
+.v2-recent[hidden] {
+  display: none !important;
+}
+
+/* Some radial navigation families inherited left offsets from older layouts. */
+.nav.nav-radial {
+  position: absolute !important;
+  inset: max(18px, var(--v4-safe-top)) max(18px, var(--v4-safe-right)) auto auto !important;
+  left: auto !important;
+  right: max(18px, var(--v4-safe-right)) !important;
+  width: min(215px, calc(100vw - 36px - var(--v4-safe-left) - var(--v4-safe-right))) !important;
+  max-width: calc(100vw - 36px - var(--v4-safe-left) - var(--v4-safe-right));
+}
+
+/* The preview buttons are also bound here, independently of the v2 dock listener. */
+body[data-preview-device="tablet"],
+body[data-preview-device="mobile"] {
+  min-height: 100vh;
+  padding: 30px 0 calc(30px + var(--v4-safe-bottom));
+  background: #161a18;
+}
+body[data-preview-device="tablet"] .world,
+body[data-preview-device="mobile"] .world {
+  display: block !important;
+  margin-inline: auto !important;
+  max-width: calc(100vw - var(--v4-safe-left) - var(--v4-safe-right) - 22px) !important;
+  overflow-x: clip !important;
+  contain: inline-size;
+  box-shadow: 0 30px 110px rgba(0,0,0,.58);
+}
+body[data-preview-device="tablet"] .world {
+  width: min(820px, calc(100vw - var(--v4-safe-left) - var(--v4-safe-right) - 26px)) !important;
+}
+body[data-preview-device="mobile"] .world {
+  width: min(390px, calc(100vw - var(--v4-safe-left) - var(--v4-safe-right) - 22px)) !important;
+}
+body[data-preview-device="desktop"] {
+  padding: 0 !important;
+  background: initial;
+}
+body[data-preview-device="desktop"] .world {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  contain: none;
+  box-shadow: none;
+}
+body[data-preview-device="mobile"] .world :is(
+  .layout-poster .section,
+  .layout-collage .section,
+  .layout-isometric .section,
+  .layout-archive .section,
+  .v3-surface,
+  .v3-stage-frame,
+  .works figure
+) {
+  max-width: 100% !important;
+  transform: none !important;
+}
+body[data-preview-device="mobile"] .world :is(.hero-art, .v3-hero-stage, .visual, .demo) {
+  overflow-x: clip !important;
+}
+
+@media (max-width: 980px) {
+  /* Several nav types positioned every direct button (corner/radial/ticket). */
+  .world > .nav {
+    z-index: 9500 !important;
+    isolation: isolate;
+  }
+  .world > main,
+  .world > .v3-material-marquee {
+    position: relative;
+    z-index: 1;
+  }
+  .world .v2-nav-toggle {
+    position: relative !important;
+    z-index: 4 !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 46px !important;
+    min-width: 46px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    transform: none !important;
+    writing-mode: horizontal-tb !important;
+    pointer-events: auto !important;
+  }
+  .world .v2-nav-toggle span {
+    position: static !important;
+    width: 21px !important;
+    height: 2px !important;
+    margin: 0 !important;
+    transform: none !important;
+    background: currentColor !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+  .world.v2-nav-open > .nav {
+    z-index: 9800 !important;
+  }
+  .world .nav > nav[data-v4-open="true"] {
+    z-index: 9900 !important;
+    pointer-events: auto !important;
+  }
+  .nav.nav-radial {
+    position: sticky !important;
+    inset: 0 0 auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Controls such as configure swatches and carousel arrows were 34–37px wide. */
+  :where(.world, .gallery) button:not([hidden]),
+  :where(.world, .gallery) [role="button"]:not([hidden]) {
+    min-inline-size: 44px;
+  }
+  :where(.world, .gallery) :is(
+    .configure nav button,
+    .carousel nav button,
+    .filter nav button,
+    .scheduledemo nav button,
+    .switcher nav button,
+    .menudemo nav button,
+    .reveal nav button,
+    .mapdemo button
+  ) {
+    inline-size: 44px !important;
+    min-inline-size: 44px !important;
+    block-size: 44px !important;
+    min-block-size: 44px !important;
+    padding: 0 !important;
+    display: inline-grid;
+    place-items: center;
+  }
+  .world .nav > nav {
+    pointer-events: auto !important;
+  }
+}
+
+@container world (max-width: 980px) {
+  .world > .nav {
+    z-index: 9500 !important;
+    isolation: isolate;
+  }
+  .world .v2-nav-toggle {
+    position: relative !important;
+    z-index: 4 !important;
+    inset: auto !important;
+    width: 46px !important;
+    min-width: 46px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+  .world .v2-nav-toggle span {
+    position: static !important;
+    width: 21px !important;
+    height: 2px !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  .nav.nav-radial {
+    position: sticky !important;
+    inset: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@container world (max-width: 760px) {
+  .world button:not([hidden]),
+  .world [role="button"]:not([hidden]) {
+    min-inline-size: 44px;
+  }
+  .world :is(.configure nav button,.carousel nav button,.filter nav button,.scheduledemo nav button,.switcher nav button,.menudemo nav button,.reveal nav button,.mapdemo button) {
+    inline-size: 44px !important;
+    min-inline-size: 44px !important;
+    block-size: 44px !important;
+    min-block-size: 44px !important;
+    padding: 0 !important;
+  }
+}
