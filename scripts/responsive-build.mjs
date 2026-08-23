@@ -29,6 +29,10 @@ function makeDomHelpersNullSafe(source) {
       "const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];"
     )
     .replace(
+      "const $ = (s,r=document) => r.querySelector(s);\nconst $$ = (s,r=document) => [...r.querySelectorAll(s)];",
+      "const $ = (s,r=document) => r?.querySelector?.(s) || null;\nconst $$ = (s,r=document) => r?.querySelectorAll ? [...r.querySelectorAll(s)] : [];"
+    )
+    .replace(
       "const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];",
       "const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];"
     );
