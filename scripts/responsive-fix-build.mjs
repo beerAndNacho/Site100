@@ -41,10 +41,13 @@ function walk(directory) {
     if (!name.endsWith('.html')) continue;
     let html = readFileSync(path, 'utf8');
     if (!html.includes('/Site100/assets/v4-fixes.css')) {
-      html = html.replace(
-        '<link rel="stylesheet" href="/Site100/assets/v4-responsive.css">',
-        '<link rel="stylesheet" href="/Site100/assets/v4-responsive.css"><link rel="stylesheet" href="/Site100/assets/v4-fixes.css">'
-      );
+      const previousFixTag = '<link rel="stylesheet" href="/Site100/assets/v4-responsive-fixes.css">';
+      const baseTag = '<link rel="stylesheet" href="/Site100/assets/v4-responsive.css">';
+      if (html.includes(previousFixTag)) {
+        html = html.replace(previousFixTag, `${previousFixTag}<link rel="stylesheet" href="/Site100/assets/v4-fixes.css">`);
+      } else {
+        html = html.replace(baseTag, `${baseTag}<link rel="stylesheet" href="/Site100/assets/v4-fixes.css">`);
+      }
     }
     writeFileSync(path, html);
   }
