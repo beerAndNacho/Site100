@@ -22,15 +22,29 @@ for (const file of assets) {
   cpSync(source, resolve(dist, 'assets', file));
 }
 
-// The gallery enhancement is a progressive module. On a cold module graph it
-// can execute one frame before the base gallery markup has been committed.
+function makeDomHelpersNullSafe(source) {
+  return source
+    .replace(
+      "const $ = (selector, root = document) => root.querySelector(selector);\nconst $$ = (selector, root = document) => [...root.querySelectorAll(selector)];",
+      "const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];"
+    )
+    .replace(
+      "const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];",
+      "const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];"
+    );
+}
+
+for (const file of ['app.js', 'enhance.js', 'enhance-fix.js', 'art-direction.js', 'responsive.js']) {
+  const path = resolve(dist, 'assets', file);
+  if (!existsSync(path)) continue;
+  writeFileSync(path, makeDomHelpersNullSafe(readFileSync(path, 'utf8')));
+}
+
+// The gallery enhancement is progressive. On a cold module graph it may run
+// one frame before the base gallery markup has been committed.
 const enhancementPath = resolve(dist, 'assets', 'enhance.js');
 if (existsSync(enhancementPath)) {
   let enhancement = readFileSync(enhancementPath, 'utf8');
-  enhancement = enhancement.replace(
-    "const $ = (selector, root = document) => root.querySelector(selector);\nconst $$ = (selector, root = document) => [...root.querySelectorAll(selector)];",
-    "const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];"
-  );
   enhancement = enhancement.replace(
     "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  const originalCards = $$('.gcard', grid);",
     "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  if (!index || !tools || !grid) {\n    window.__SITE100_GALLERY_RETRY__ = (window.__SITE100_GALLERY_RETRY__ || 0) + 1;\n    if (window.__SITE100_GALLERY_RETRY__ < 20) setTimeout(setupGallery, 16);\n    return;\n  }\n  window.__SITE100_GALLERY_RETRY__ = 0;\n  const originalCards = $$('.gcard', grid);"
@@ -110,7 +124,8 @@ manifest.responsiveSystem = {
     'landscape-phone-layout',
     'print-layout',
     'gallery-render-retry',
-    'radial-nav-normalization'
+    'radial-nav-normalization',
+    'null-safe-progressive-modules'
   ]
 };
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
