@@ -51,6 +51,7 @@ jobs:
           test -s dist/assets/v3.css
           test -s dist/assets/v4-responsive.css
           test -s dist/assets/v4-responsive-fixes.css
+          test -s dist/assets/v4-fixes.css
           test -s dist/site.webmanifest
           test -s dist/404.html
           test -s dist/preview-gallery.svg
@@ -65,10 +66,14 @@ jobs:
           grep -q '/Site100/assets/responsive-fixes.js' dist/index.html
           grep -q '/Site100/assets/v4-responsive.css' dist/index.html
           grep -q '/Site100/assets/v4-responsive-fixes.css' dist/index.html
+          grep -q '/Site100/assets/v4-fixes.css' dist/index.html
           grep -q '__SITE100_GALLERY_RETRY__' dist/assets/enhance.js
+          grep -q 'setupPreviewModes' dist/assets/responsive.js
           grep -q '/Site100/assets/responsive.js' dist/sites/salt-bakery/index.html
           grep -q '/Site100/assets/responsive-fixes.js' dist/sites/salt-bakery/index.html
+          grep -q '/Site100/assets/v4-fixes.css' dist/sites/salt-bakery/index.html
           grep -q '"responsiveVersion": "4.0.0"' dist/sites/salt-bakery/design.json
+          grep -q '"responsivePatchVersion": "4.0.1"' dist/sites/salt-bakery/design.json
           grep -q '"strategy": "viewport-and-container-queries"' dist/sites/salt-bakery/design.json
           grep -q '"visualVersion": "3.0.0"' dist/sites/salt-bakery/design.json
           grep -q '"artDirection": "atelier"' dist/sites/salt-bakery/design.json
