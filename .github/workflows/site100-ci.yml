@@ -2,7 +2,7 @@ name: Site100 CI
 
 on:
   push:
-    branches: [main, site100-v2-advanced, site100-v2-copy-polish, site100-v3-art-direction]
+    branches: [main, site100-v2-advanced, site100-v2-copy-polish, site100-v3-art-direction, site100-v4-responsive-app]
     paths:
       - 'src/**'
       - 'scripts/**'
@@ -21,18 +21,19 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate source, diversity, Korean copy and v3 runtime
-        run: npm run check
-      - name: Build 100 sites, v2 utilities and v3 artworks
-        run: npm run build
-      - name: Audit routes, SEO, copy, previews and art directions
-        run: npm run audit
-      - name: Verify representative v3 output
+      - name: Install responsive browser audit dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Validate, build and run the full responsive matrix
+        run: npm run test:responsive
+      - name: Verify representative v4 output
         run: |
           set -euo pipefail
           test -s dist/index.html
@@ -43,23 +44,26 @@ jobs:
           test -s dist/assets/enhance.js
           test -s dist/assets/enhance-fix.js
           test -s dist/assets/art-direction.js
+          test -s dist/assets/responsive.js
           test -s dist/assets/styles.css
           test -s dist/assets/v2.css
           test -s dist/assets/v3.css
+          test -s dist/assets/v4-responsive.css
           test -s dist/site.webmanifest
           test -s dist/404.html
           test -s dist/preview-gallery.svg
+          test -s dist/responsive-matrix.json
+          test -s dist/responsive-static-report.json
+          test -s dist/reports/responsive-browser-report.json
           test "$(find dist/sites -mindepth 2 -maxdepth 2 -name index.html | wc -l | tr -d ' ')" -eq 100
           test "$(find dist/sites -mindepth 2 -maxdepth 2 -name design.json | wc -l | tr -d ' ')" -eq 100
           test "$(find dist/previews -maxdepth 1 -name '*.svg' | wc -l | tr -d ' ')" -eq 100
           test "$(find dist/artworks -maxdepth 1 -name '*.svg' | wc -l | tr -d ' ')" -eq 100
-          grep -q '/Site100/assets/copy-bootstrap.js' dist/index.html
-          grep -q '/Site100/assets/enhance-fix.js' dist/index.html
-          grep -q '/Site100/assets/art-direction.js' dist/index.html
-          grep -q '/Site100/assets/v3.css' dist/index.html
-          grep -q '/Site100/assets/art-direction.js' dist/sites/salt-bakery/index.html
-          grep -q '오븐 선반과 발효 시계를' dist/sites/salt-bakery/index.html
-          grep -q '"copyVersion": "2.1.0"' dist/sites/salt-bakery/design.json
+          grep -q '/Site100/assets/responsive.js' dist/index.html
+          grep -q '/Site100/assets/v4-responsive.css' dist/index.html
+          grep -q '/Site100/assets/responsive.js' dist/sites/salt-bakery/index.html
+          grep -q '"responsiveVersion": "4.0.0"' dist/sites/salt-bakery/design.json
+          grep -q '"strategy": "viewport-and-container-queries"' dist/sites/salt-bakery/design.json
           grep -q '"visualVersion": "3.0.0"' dist/sites/salt-bakery/design.json
           grep -q '"artDirection": "atelier"' dist/sites/salt-bakery/design.json
           grep -q '"artDirection": "precision"' dist/sites/harbor-law/design.json
@@ -75,3 +79,14 @@ jobs:
           test -s dist/artworks/endpoint-api.svg
           test -s dist/artworks/dal-hanok-stay.svg
           test -s dist/artworks/100worlds-gallery.svg
+      - name: Upload responsive audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site100-responsive-audit
+          path: |
+            dist/responsive-matrix.json
+            dist/responsive-static-report.json
+            dist/reports/
+          if-no-files-found: warn
+          retention-days: 14
