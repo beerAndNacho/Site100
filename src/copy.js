@@ -24,26 +24,30 @@ const FLOW_LABELS = {
   form: '상황 접수와 상담'
 };
 
-const SERVICE_BUILDERS = {
-  booking: (kind) => [`${kind} 프로그램 안내`, '날짜·시간 선택', '예약 전 확인'],
-  quote: () => ['현재 상황 진단', '항목별 범위 선택', '견적 요청'],
-  mixer: () => ['취향·조건 선택', '추천 조합 미리보기', '맞춤 상담'],
-  status: () => ['실시간 이용 현황', '가능 시간 확인', '알림·문의'],
-  compare: () => ['기준별 전후 비교', '옵션 차이 확인', '상담·예약'],
-  map: () => ['위치·구역 탐색', '경로·조건 확인', '방문·문의'],
-  filter: () => ['조건 필터링', '맞춤 항목 비교', '신청·문의'],
-  schedule: () => ['일정 둘러보기', '시간대 선택', '예약·참여 문의'],
-  build: () => ['구성 블록 선택', '결과 미리보기', '제작 문의'],
-  command: () => ['기능·명령 실행', '결과 패널 확인', '도입 상담'],
-  timeline: () => ['전체 과정 확인', '단계별 준비사항', '일정·문의'],
-  donation: () => ['후원 분야 선택', '예상 변화 확인', '정기 후원 안내'],
-  rsvp: () => ['행사 정보 확인', '참석 여부 입력', '문의·연락'],
-  archive: () => ['자료 검색', '주제별 컬렉션', '열람·제작 문의'],
-  audio: () => ['오디오 콘텐츠 탐색', '재생 목록 확인', '수업·공연 문의'],
-  drag: () => ['요소 직접 배치', '구성 조정', '프로젝트 문의'],
-  carousel: () => ['대표 사례 둘러보기', '장면별 세부 정보', '프로젝트 문의'],
-  switcher: () => ['보기 기준 전환', '정보 비교', '도입·문의'],
-  calculate: () => ['조건 입력', '예상 결과 계산', '상세 추천 선택', '예약·단체 문의'];
+function hasFinalConsonant(value) {
+  const text = String(value).trim();
+  for (let index = text.length - 1; index >= 0; index -= 1) {
+    const code = text.charCodeAt(index);
+    if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 !== 0;
+    if (/[0-9]/.test(text[index])) return ['0', '1', '3', '6', '7', '8'].includes(text[index]);
+    if (/[A-Za-z]/.test(text[index])) return false;
+  }
+  return false;
+}
+
+export function withParticle(value, consonantForm, vowelForm) {
+  return `${value}${hasFinalConsonant(value) ? consonantForm : vowelForm}`;
+}
+
+export function polishedTagline(site) {
+  const [first = site.kind, second = '서비스 흐름'] = site.materials || [];
+  const flow = FLOW_LABELS[site.interaction] || '정보 탐색과 다음 행동';
+  return `${withParticle(first, '과', '와')} ${withParticle(second, '을', '를')} 핵심 인터페이스로 삼아, ${site.kind}의 ${flow} 흐름을 한 화면에서 경험합니다.`;
+}
+
+function menuServices(site) {
+  if (/레스토랑|카페|찻집|디저트|베이커리|셰프/.test(site.kind)) {
+    return ['대표 메뉴 둘러보기', '오늘의 추천 선택', '예약·단체 문의'];
   }
   return ['대표 상품 탐색', '구성·옵션 선택', '주문·상담 문의'];
 }
