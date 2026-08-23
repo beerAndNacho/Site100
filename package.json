@@ -5,10 +5,10 @@
   "type": "module",
   "description": "100 industry-specific responsive websites with distinct design fingerprints, art directions and adaptive web-app layouts.",
   "scripts": {
-    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check src/copy.js && node --check src/copy-bootstrap.js && node --check src/art-direction.js && node --check src/responsive.js && node --check src/responsive-v4.js && node --check src/responsive-fixes.js && node --check scripts/postbuild.mjs && node --check scripts/art-build.mjs && node --check scripts/responsive-build.mjs && node --check scripts/responsive-fix-build.mjs && node --check scripts/v3-audit.mjs && node --check scripts/responsive-audit.mjs && node --check scripts/responsive-browser-audit-v2.mjs",
+    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check src/copy.js && node --check src/copy-bootstrap.js && node --check src/art-direction.js && node --check src/responsive.js && node --check src/responsive-v4.js && node --check src/responsive-fixes.js && node --check scripts/postbuild.mjs && node --check scripts/art-build.mjs && node --check scripts/responsive-build.mjs && node --check scripts/responsive-fix-build.mjs && node --check scripts/v3-audit.mjs && node --check scripts/responsive-audit.mjs && node --check scripts/module-scope-smoke.mjs && node --check scripts/responsive-browser-audit-v2.mjs",
     "build": "node scripts/build.mjs && node scripts/postbuild.mjs && node scripts/art-build.mjs && node scripts/responsive-build.mjs && node scripts/responsive-fix-build.mjs",
     "audit": "node scripts/audit.mjs && node scripts/v3-audit.mjs && node scripts/responsive-audit.mjs",
-    "audit:browser": "node scripts/responsive-browser-audit-v2.mjs",
+    "audit:browser": "node scripts/module-scope-smoke.mjs && node scripts/responsive-browser-audit-v2.mjs",
     "test": "npm run check && npm run build && npm run audit",
     "test:responsive": "npm run test && npm run audit:browser"
   },
