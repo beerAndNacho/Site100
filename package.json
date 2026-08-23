@@ -5,7 +5,7 @@
   "type": "module",
   "description": "100 industry-specific responsive websites with distinct design fingerprints, art directions and adaptive web-app layouts.",
   "scripts": {
-    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check src/copy.js && node --check src/copy-bootstrap.js && node --check src/art-direction.js && node --check src/responsive.js && node --check scripts/postbuild.mjs && node --check scripts/art-build.mjs && node --check scripts/responsive-build.mjs && node --check scripts/v3-audit.mjs && node --check scripts/responsive-audit.mjs && node --check scripts/responsive-browser-audit-fast.mjs",
+    "check": "node scripts/check.mjs && node --check src/enhance-fix.js && node --check src/copy.js && node --check src/copy-bootstrap.js && node --check src/art-direction.js && node --check src/responsive.js && node --check src/responsive-fixes.js && node --check scripts/postbuild.mjs && node --check scripts/art-build.mjs && node --check scripts/responsive-build.mjs && node --check scripts/v3-audit.mjs && node --check scripts/responsive-audit.mjs && node --check scripts/responsive-browser-audit-fast.mjs",
     "build": "node scripts/build.mjs && node scripts/postbuild.mjs && node scripts/art-build.mjs && node scripts/responsive-build.mjs",
     "audit": "node scripts/audit.mjs && node scripts/v3-audit.mjs && node scripts/responsive-audit.mjs",
     "audit:browser": "node scripts/responsive-browser-audit-fast.mjs",
