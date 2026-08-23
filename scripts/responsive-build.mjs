@@ -22,26 +22,54 @@ for (const file of assets) {
   cpSync(source, resolve(dist, 'assets', file));
 }
 
+function replaceLiteral(source, search, replacement) {
+  return source.includes(search) ? source.replace(search, () => replacement) : source;
+}
+
 function makeDomHelpersNullSafe(source) {
-  return source
-    .replace(
-      "const $ = (selector, root = document) => root.querySelector(selector);\nconst $$ = (selector, root = document) => [...root.querySelectorAll(selector)];",
-      "const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];"
-    )
-    .replace(
-      "const $ = (s,r=document) => r.querySelector(s);\nconst $$ = (s,r=document) => [...r.querySelectorAll(s)];",
-      "const $ = (s,r=document) => r?.querySelector?.(s) || null;\nconst $$ = (s,r=document) => r?.querySelectorAll ? [...r.querySelectorAll(s)] : [];"
-    )
-    .replace(
-      "const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];",
-      "const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];"
-    );
+  let result = source;
+
+  result = replaceLiteral(
+    result,
+    'const $ = (selector, root = document) => root.querySelector(selector);\nconst $$ = (selector, root = document) => [...root.querySelectorAll(selector)];',
+    'const $ = (selector, root = document) => root?.querySelector?.(selector) || null;\nconst $$ = (selector, root = document) => root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];'
+  );
+  result = replaceLiteral(
+    result,
+    'const $ = (s,r=document) => r.querySelector(s);\nconst $$ = (s,r=document) => [...r.querySelectorAll(s)];',
+    'const $ = (s,r=document) => r?.querySelector?.(s) || null;\nconst $$ = (s,r=document) => r?.querySelectorAll ? [...r.querySelectorAll(s)] : [];'
+  );
+  result = replaceLiteral(
+    result,
+    'const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];',
+    'const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];'
+  );
+  result = replaceLiteral(
+    result,
+    'const $ = (selector, root = document) => root?.querySelector?.(selector) ?? null;',
+    'const $ = (selector, root = document) => root?.querySelector?.(selector) || null;'
+  );
+
+  return result;
 }
 
 for (const file of ['app.js', 'enhance.js', 'enhance-fix.js', 'art-direction.js', 'responsive.js']) {
   const path = resolve(dist, 'assets', file);
   if (!existsSync(path)) continue;
-  writeFileSync(path, makeDomHelpersNullSafe(readFileSync(path, 'utf8')));
+  const source = readFileSync(path, 'utf8');
+  const expectedCollectionHelper = /const\s+\$\$\s*=/.test(source) || /,\$\$\s*=/.test(source);
+  const patched = makeDomHelpersNullSafe(source);
+  const singleHelperCount = (patched.match(/const\s+\$(?!\$)\s*=/g) || []).length;
+  const hasCollectionHelper = /const\s+\$\$\s*=/.test(patched) || /,\$\$\s*=/.test(patched);
+
+  if (singleHelperCount > 1) {
+    throw new Error(`Responsive helper patch created duplicate $ declarations in ${file}.`);
+  }
+  if (expectedCollectionHelper && !hasCollectionHelper) {
+    throw new Error(`Responsive helper patch removed the $$ declaration in ${file}.`);
+  }
+
+  writeFileSync(path, patched);
 }
 
 // The gallery enhancement is progressive. On a cold module graph it may run
@@ -49,7 +77,8 @@ for (const file of ['app.js', 'enhance.js', 'enhance-fix.js', 'art-direction.js'
 const enhancementPath = resolve(dist, 'assets', 'enhance.js');
 if (existsSync(enhancementPath)) {
   let enhancement = readFileSync(enhancementPath, 'utf8');
-  enhancement = enhancement.replace(
+  enhancement = replaceLiteral(
+    enhancement,
     "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  const originalCards = $$('.gcard', grid);",
     "  const index = $('.gindex');\n  const tools = $('.gtools');\n  const grid = $('.ggrid');\n  if (!index || !tools || !grid) {\n    window.__SITE100_GALLERY_RETRY__ = (window.__SITE100_GALLERY_RETRY__ || 0) + 1;\n    if (window.__SITE100_GALLERY_RETRY__ < 20) setTimeout(setupGallery, 16);\n    return;\n  }\n  window.__SITE100_GALLERY_RETRY__ = 0;\n  const originalCards = $$('.gcard', grid);"
   );
