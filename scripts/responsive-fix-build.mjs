@@ -18,7 +18,8 @@ for (const site of SITES) {
   const designPath = resolve(dist, 'sites', site.slug, 'design.json');
   if (!existsSync(designPath)) throw new Error(`Missing design.json for ${site.slug}`);
   const design = JSON.parse(readFileSync(designPath, 'utf8'));
-  design.responsiveVersion = '4.0.1';
+  design.responsiveVersion = '4.0.0';
+  design.responsivePatchVersion = '4.0.1';
   design.responsive.patch = 'browser-audit-fixes';
   design.responsive.capabilities = [...new Set([
     ...(design.responsive.capabilities || []),
@@ -52,7 +53,8 @@ walk(dist);
 
 const manifestPath = resolve(dist, 'manifest.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-manifest.responsiveVersion = '4.0.1';
+manifest.responsiveVersion = '4.0.0';
+manifest.responsivePatchVersion = '4.0.1';
 manifest.responsiveSystem.patch = 'browser-audit-fixes';
 manifest.responsiveSystem.fixedFailureClasses = [
   'gallery-null-root',
