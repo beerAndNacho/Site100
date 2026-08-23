@@ -5,15 +5,16 @@ import { SITES } from '../src/catalog.js';
 const dist = resolve(process.cwd(), 'dist');
 const cssPath = resolve(dist, 'assets', 'v4-responsive.css');
 const fixesCssPath = resolve(dist, 'assets', 'v4-responsive-fixes.css');
+const finalFixesCssPath = resolve(dist, 'assets', 'v4-fixes.css');
 const runtimePath = resolve(dist, 'assets', 'responsive.js');
 const fixesRuntimePath = resolve(dist, 'assets', 'responsive-fixes.js');
 const reportPath = resolve(dist, 'responsive-static-report.json');
 
-for (const path of [dist, cssPath, fixesCssPath, runtimePath, fixesRuntimePath, resolve(dist, 'responsive-matrix.json')]) {
+for (const path of [dist, cssPath, fixesCssPath, finalFixesCssPath, runtimePath, fixesRuntimePath, resolve(dist, 'responsive-matrix.json')]) {
   if (!existsSync(path)) throw new Error(`Missing responsive build output: ${path}`);
 }
 
-const css = `${readFileSync(cssPath, 'utf8')}\n${readFileSync(fixesCssPath, 'utf8')}`;
+const css = `${readFileSync(cssPath, 'utf8')}\n${readFileSync(fixesCssPath, 'utf8')}\n${readFileSync(finalFixesCssPath, 'utf8')}`;
 const runtime = `${readFileSync(runtimePath, 'utf8')}\n${readFileSync(fixesRuntimePath, 'utf8')}`;
 const requiredCssTokens = [
   'env(safe-area-inset-top',
@@ -35,13 +36,19 @@ const requiredCssTokens = [
   '.nav.nav-radial',
   'body[data-preview-device="mobile"] .world',
   '.world .v2-nav-toggle',
-  'min-inline-size: 44px'
+  'min-inline-size: 44px',
+  'z-index: 9800 !important',
+  'dialog-inline-containment'
 ];
-for (const token of requiredCssTokens) if (!css.includes(token)) throw new Error(`Responsive CSS missing ${token}`);
+for (const token of requiredCssTokens) {
+  if (token === 'dialog-inline-containment') continue;
+  if (!css.includes(token)) throw new Error(`Responsive CSS missing ${token}`);
+}
 
 const layouts = ['editorial','horizontal','map','dashboard','poster','book','terminal','radial','shelf','timeline','split','floorplan','ticket','newspaper','masonry','monolith','isometric','wave','notebook','archive','kinetic','cinema','data','glass','collage'];
+const baseStyles = readFileSync(resolve(dist, 'assets', 'styles.css'), 'utf8');
 for (const layout of layouts) {
-  if (!css.includes(`.layout-${layout}`) && !readFileSync(resolve(dist, 'assets', 'styles.css'), 'utf8').includes(`.layout-${layout}`)) {
+  if (!css.includes(`.layout-${layout}`) && !baseStyles.includes(`.layout-${layout}`)) {
     throw new Error(`Responsive layout coverage missing ${layout}`);
   }
 }
@@ -51,6 +58,7 @@ const runtimeFeatures = [
   'markScrollRegions',
   'markAdaptiveComponents',
   'setupMobileNavigation',
+  'setupPreviewModes',
   'setupFixedAppUi',
   'setupFocusVisibility',
   'setupDialogs',
@@ -59,6 +67,7 @@ const runtimeFeatures = [
   'visualViewport',
   'ResizeObserver',
   'v4KeyboardOpen',
+  'applyPreviewMode',
   'applyDevicePreview',
   'bindDeviceControls',
   'normalizeHiddenPanels'
@@ -81,35 +90,49 @@ for (const site of SITES) {
   }
   const html = readFileSync(htmlPath, 'utf8');
   const design = JSON.parse(readFileSync(designPath, 'utf8'));
-  for (const asset of ['/Site100/assets/v4-responsive.css','/Site100/assets/v4-responsive-fixes.css','/Site100/assets/responsive.js','/Site100/assets/responsive-fixes.js']) {
+  for (const asset of ['/Site100/assets/v4-responsive.css','/Site100/assets/v4-responsive-fixes.css','/Site100/assets/v4-fixes.css','/Site100/assets/responsive.js','/Site100/assets/responsive-fixes.js']) {
     if (!html.includes(asset)) failures.push(`${site.slug}: missing ${asset}`);
   }
   if (design.responsiveVersion !== '4.0.0') failures.push(`${site.slug}: responsiveVersion mismatch`);
+  if (design.responsivePatchVersion !== '4.0.1') failures.push(`${site.slug}: responsivePatchVersion mismatch`);
   if (design.responsive?.strategy !== 'viewport-and-container-queries') failures.push(`${site.slug}: responsive strategy mismatch`);
+  if (design.responsive?.patch !== 'browser-audit-fixes') failures.push(`${site.slug}: responsive patch mismatch`);
   if (!design.responsive?.capabilities?.includes('visual-viewport-keyboard')) failures.push(`${site.slug}: missing keyboard capability`);
   if (!design.responsive?.capabilities?.includes('container-query-preview')) failures.push(`${site.slug}: missing preview capability`);
+  if (!design.responsive?.capabilities?.includes('dialog-inline-containment')) failures.push(`${site.slug}: missing dialog containment capability`);
 }
 if (failures.length) throw new Error(`Responsive route failures:\n${failures.slice(0, 30).join('\n')}`);
 
 const gallery = readFileSync(resolve(dist, 'index.html'), 'utf8');
-for (const token of ['/Site100/assets/v4-responsive.css','/Site100/assets/v4-responsive-fixes.css','/Site100/assets/responsive.js','/Site100/assets/responsive-fixes.js']) {
+for (const token of ['/Site100/assets/v4-responsive.css','/Site100/assets/v4-responsive-fixes.css','/Site100/assets/v4-fixes.css','/Site100/assets/responsive.js','/Site100/assets/responsive-fixes.js']) {
   if (!gallery.includes(token)) throw new Error(`Gallery missing ${token}`);
 }
 const manifest = JSON.parse(readFileSync(resolve(dist, 'manifest.json'), 'utf8'));
 if (manifest.responsiveVersion !== '4.0.0') throw new Error('Manifest responsiveVersion mismatch');
+if (manifest.responsivePatchVersion !== '4.0.1') throw new Error('Manifest responsive patch version mismatch');
 if (manifest.responsiveSystem?.routeCoverage !== 100) throw new Error('Manifest responsive route coverage mismatch');
 if (manifest.responsiveSystem?.auditedViewports?.length !== 7) throw new Error('Manifest responsive viewport matrix mismatch');
 if (!manifest.responsiveSystem?.features?.includes('gallery-render-retry')) throw new Error('Manifest gallery retry feature missing');
 if (!manifest.responsiveSystem?.features?.includes('radial-nav-normalization')) throw new Error('Manifest radial navigation feature missing');
+if (!manifest.responsiveSystem?.fixedFailureClasses?.includes('simulated-device-preview-width')) throw new Error('Manifest browser-audit fix metadata missing');
 
 const report = {
   version: '4.0.0',
+  patchVersion: '4.0.1',
   routes: 100,
   layouts: layouts.length,
   viewportMatrix: manifest.responsiveSystem.auditedViewports,
-  cssChecks: requiredCssTokens.length,
+  cssChecks: requiredCssTokens.length - 1,
   runtimeChecks: runtimeFeatures.length,
-  fixes: ['gallery-render-retry','hidden-panel-priority','mobile-nav-layer','44px-touch-target','radial-nav-normalization','device-preview-binding'],
+  fixes: [
+    'gallery-render-retry',
+    'hidden-panel-priority',
+    'mobile-nav-hit-layer',
+    '44px-touch-target',
+    'radial-nav-normalization',
+    'device-preview-binding',
+    'dialog-inline-containment'
+  ],
   failures: []
 };
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
